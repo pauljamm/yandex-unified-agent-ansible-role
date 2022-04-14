@@ -1,0 +1,42 @@
+storages:
+  - name: main
+    plugin: fs
+    config:
+      directory: /var/lib/yandex/unified_agent/main
+      max_partition_size: 100mb
+      max_segment_size: 10mb
+
+channels:
+  - name: cloud_monitoring
+    channel:
+      pipe:
+        - storage_ref:
+            name: main
+      output:
+        plugin: yc_metrics
+        config:
+          folder_id: {{ yc_monitoring_folder_id }}
+          iam:
+            cloud_meta: {}
+
+routes:
+  - input:
+      plugin: linux_metrics
+      config:
+        namespace: sys
+    channel:
+      channel_ref:
+        name: cloud_monitoring
+
+  - input:
+      plugin: agent_metrics
+      config:
+        namespace: ua
+    channel:
+      pipe:
+        - filter:
+            plugin: filter_metrics
+            config:
+              match: "{scope=health}"
+      channel_ref:
+        name: cloud_monitoring

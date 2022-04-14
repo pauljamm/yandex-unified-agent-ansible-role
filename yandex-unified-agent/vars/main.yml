@@ -1,0 +1,4 @@
+yandex_unified_agent_paths:
+  - /etc/yandex/unified_agent/conf.d
+  - /etc/yandex/unified_agent/secrets
+  - /var/lib/yandex/unified_agent

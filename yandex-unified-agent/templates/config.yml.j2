@@ -1,0 +1,10 @@
+# yandex-unified-agent package default config
+# it is recommended to put user configs in /etc/yandex/unified_agent/conf.d/*.yml files
+monitoring:
+  port: 16300
+
+status:
+  port: 16301
+
+import:
+  - /etc/yandex/unified_agent/conf.d/*.yml

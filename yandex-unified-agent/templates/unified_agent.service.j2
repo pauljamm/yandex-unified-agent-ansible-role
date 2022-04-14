@@ -1,0 +1,18 @@
+[Unit]
+Description=Yandex Unified Agent service
+After=network.target
+
+[Service]
+Type=simple
+User=unified_agent
+Group=unified_agent
+
+Environment=UNIFIED_AGENT_LOG_PRIORITY=NOTICE
+
+Restart=on-failure
+RestartSec=2
+
+ExecStart=/usr/local/bin/unified_agent --config /etc/yandex/unified_agent/config.yml --log-priority ${UNIFIED_AGENT_LOG_PRIORITY}
+
+[Install]
+WantedBy=multi-user.target

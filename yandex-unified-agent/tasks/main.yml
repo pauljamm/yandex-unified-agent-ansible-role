@@ -1,0 +1,70 @@
+- name: Get latest version for Yandex Unified Agent
+  ansible.builtin.uri:
+    url: https://storage.yandexcloud.net/yc-unified-agent/latest-version
+    return_content: true
+  register: yandex_unified_agent_version_response
+  when: yandex_unified_agent_version == ""
+
+- name: Set version for Yandex Unified Agent
+  ansible.builtin.set_fact:
+    yandex_unified_agent_version: "{{ yandex_unified_agent_version_response.content }}"
+  when: yandex_unified_agent_version == ""
+
+- name: Download Yandex Unified Agent binary
+  ansible.builtin.get_url:
+    url: "https://storage.yandexcloud.net/yc-unified-agent/releases/{{ yandex_unified_agent_version }}/unified_agent"
+    dest: /usr/local/bin/unified_agent
+    mode: 0755
+    owner: root
+    group: root
+
+- name: Create Yandex Unified Agent group
+  ansible.builtin.group:
+    name: unified_agent
+
+- name: Create Yandex Unified Agent user
+  ansible.builtin.user:
+    name: unified_agent
+    create_home: false
+    home: /var/lib/yandex/unified_agent
+    group: unified_agent
+
+- name: Create directories for Yandex Unified Agent
+  ansible.builtin.file:
+    state: directory
+    owner: unified_agent
+    group: unified_agent
+    mode: 0755
+    path: "{{ item }}"
+  loop: "{{ yandex_unified_agent_paths }}"
+
+- name: Add Yandex Unified Agent main config file
+  ansible.builtin.template:
+    src: config.yml.j2
+    dest: /etc/yandex/unified_agent/config.yml
+    owner: unified_agent
+    group: unified_agent
+    mode: 0644
+
+- name: Add Yandex Unified Agent user config files
+  ansible.builtin.template:
+    src: "{{ item }}"
+    dest: "/etc/yandex/unified_agent/conf.d/{{ item | basename | regex_replace('.j2$', '') }}"
+    owner: unified_agent
+    group: unified_agent
+    mode: 0644
+  loop: "{{ lookup('fileglob', '../templates/conf.d/*.yml.j2', wantlist=true) }}"
+
+- name: Add systemd service file for Yandex Unified Agent
+  ansible.builtin.template:
+    src: unified_agent.service.j2
+    dest: /etc/systemd/system/unified_agent.service
+    owner: root
+    group: root
+    mode: 0644
+
+- name: Start and enable Yandex Unified Agent services
+  ansible.builtin.service:
+    name: unified_agent
+    state: started
+    enabled: true
